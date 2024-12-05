@@ -21,6 +21,9 @@ const Spinner = struct {
     }
 };
 
+const bar = "━";
+const half_bar_left = "╸";
+const half_bar_right = "╺";
 const TIOCGWINSZ: u32 = 0x5413; // https://docs.rs/libc/latest/libc/constant.TIOCGWINSZ.html
 const WIDTH_PADDING: usize = 100;
 
@@ -54,20 +57,15 @@ pub const ProgressBar = struct {
     const Self = @This();
 
     spinner: Spinner,
-    current: u64,
-    estimate: u64,
     stdout: std.fs.File,
     buf: std.ArrayList(u8),
-    last_rendered: std.time.Instant,
+    last_rendered: i64,
 
     pub fn init(allocator: std.mem.Allocator, stdout: std.fs.File) !Self {
-        const width = getScreenWidth(stdout.handle);
-        const buf = try std.ArrayList(u8).initCapacity(allocator, width + WIDTH_PADDING);
+        const buf = try std.ArrayList(u8).initCapacity(allocator, WIDTH_PADDING);
         return Self{
             .spinner = Spinner.init(),
-            .last_rendered = try std.time.Instant.now(),
-            .current = 0,
-            .estimate = 1,
+            .last_rendered = std.time.timestamp(),
             .stdout = stdout,
             .buf = buf,
         };
@@ -78,11 +76,19 @@ pub const ProgressBar = struct {
     }
 
     pub fn render(self: *Self) !void {
-        const now = try std.time.Instant.now();
-        if (now.since(self.last_rendered) < 50 * std.time.ns_per_ms) {
-            return;
+        const now = std.time.timestamp();
+        //std.debug.print("{d}\n", .{now});
+        if (now - self.last_rendered < 50) {
+            //return;
         }
         try self.clear();
+        self.last_rendered = now;
+
+        var writer = self.buf.writer();
+
+        try writer.print("{s}{s}{s}", .{ EscapeCodes.cyan, self.spinner.get(), EscapeCodes.reset });
+        self.spinner.next();
+        try self.stdout.writeAll(self.buf.items[0..self.buf.items.len]);
     }
 
     pub fn clear(self: *Self) !void {

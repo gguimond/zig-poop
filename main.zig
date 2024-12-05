@@ -8,5 +8,16 @@ pub fn main() !void {
 
     const stdout = std.io.getStdOut();
 
-    _ = try bar.ProgressBar.init(arena, stdout);
+    var _bar = try bar.ProgressBar.init(arena, stdout);
+    defer _bar.deinit();
+
+    try _bar.render();
+
+    std.time.sleep(2 * std.time.ns_per_s);
+
+    try _bar.render();
+
+    std.time.sleep(2 * std.time.ns_per_s);
+
+    try _bar.clear();
 }
