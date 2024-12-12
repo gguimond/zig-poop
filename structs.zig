@@ -27,7 +27,7 @@ pub const Measurement = struct {
     sample_count: u64,
     unit: Unit,
 
-    const Unit = enum {
+    pub const Unit = enum {
         nanoseconds,
         bytes,
         count,

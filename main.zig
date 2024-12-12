@@ -2,6 +2,7 @@ const bar = @import("./bar.zig");
 const s = @import("./structs.zig");
 const std = @import("std");
 const collector = @import("./collector.zig");
+const formatter = @import("./formatter.zig");
 
 const usage_text =
     \\Usage: poop [options] <command1> ... <commandN>
@@ -25,8 +26,6 @@ pub fn main() !void {
 
     const args = try std.process.argsAlloc(arena);
     const stdout = std.io.getStdOut();
-    var stdout_bw = std.io.bufferedWriter(stdout.writer());
-    const stdout_w = stdout_bw.writer();
 
     var _bar = try bar.ProgressBar.init(arena, stdout);
 
@@ -76,17 +75,10 @@ pub fn main() !void {
     for (commands.items) |*command| {
         var c = try collector.Collector.init(arena, command, max_nano_seconds, _bar);
         const measurements = try c.collect();
-        std.debug.print("{?}\n", .{measurements});
-        try _bar.clear();
+        //std.debug.print("{?}\n", .{measurements});
+        var f = try formatter.Formatter.init(arena, tty_conf, command.*, measurements, stdout);
+        try f.print();
     }
 
-    std.time.sleep(2 * std.time.ns_per_s);
-
-    try _bar.clear();
-
-    try tty_conf.setColor(stdout_w, .bold);
-    const command_n = "toto";
-    try stdout_w.print("Benchmark {s}", .{command_n});
     //std.debug.print("{s}\n", .{"hello"});
-    try stdout_bw.flush();
 }

@@ -108,6 +108,8 @@ pub const Collector = struct {
         };
         self.command.sample_count = all_samples.len;
 
+        try self.bar.clear();
+
         return self.command.measurements;
     }
 };
